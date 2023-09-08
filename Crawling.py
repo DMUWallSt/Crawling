@@ -80,10 +80,10 @@ news_titles = []
 news_url = []
 news_contents = []
 news_dates = []
+
 for i in url:
     url = articles_crawler(url)
     news_url.append(url)
-
 
 # 제목, 링크, 내용 1차원 리스트로 꺼내는 함수 생성
 def makeList(newlist, content):
@@ -147,6 +147,37 @@ for i in tqdm(final_urls):
         news_date = re.sub(pattern=pattern1, repl='', string=str(news_date))
     # 날짜 가져오기
     news_dates.append(news_date)
+    
+    # Create a function to retrieve newspaper name and thumbnail link
+def get_newspaper_and_thumbnail(article_url):
+    # Load HTML for the article
+    article_html = requests.get(article_url, headers=headers)
+    article_soup = BeautifulSoup(article_html.text, "html.parser")
+
+    # Get newspaper name
+    newspaper_name = None
+    if "news.naver.com" in article_url:
+        newspaper_name_tag = article_soup.select_one(".press_logo .logo")
+        if newspaper_name_tag:
+            newspaper_name = newspaper_name_tag.text
+
+    # Get thumbnail link
+    thumbnail_link = None
+    thumbnail_tag = article_soup.find("meta", property="og:image")
+    if thumbnail_tag:
+        thumbnail_link = thumbnail_tag["content"]
+
+    return newspaper_name, thumbnail_link
+
+# Initialize lists to store newspaper names and thumbnail links
+newspaper_names = []
+thumbnail_links = []
+
+# Crawl newspaper names and thumbnail links
+for article_url in tqdm(final_urls):
+    newspaper_name, thumbnail_link = get_newspaper_and_thumbnail(article_url)
+    newspaper_names.append(newspaper_name)
+    thumbnail_links.append(thumbnail_link)   
 
 print("검색된 기사 갯수: 총 ", (page2 + 1 - page) * 10, '개')
 print("\n[뉴스 제목]")
@@ -170,6 +201,10 @@ news_df = pd.DataFrame({'date': news_dates, 'title': news_titles, 'link': final_
 # 중복 행 지우기
 news_df = news_df.drop_duplicates(keep='first', ignore_index=True)
 print("중복 제거 후 행 개수: ", len(news_df))
+
+# Add newspaper name and thumbnail link to the DataFrame
+news_df['newspaper'] = newspaper_names
+news_df['thumbnail_link'] = thumbnail_links 
 
 # 데이터 프레임 저장
 now = datetime.datetime.now()
