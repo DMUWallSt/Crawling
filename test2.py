@@ -157,9 +157,9 @@ def get_newspaper_and_thumbnail(article_url):
     # Get newspaper name
     newspaper_name = None
     if "news.naver.com" in article_url:
-        newspaper_name = article_soup.select_one(".press_logo img")
-        if newspaper_name:
-            newspaper_name = newspaper_name.get("alt")
+        newspaper_name_tag = article_soup.select_one(".press_logo .logo")
+        if newspaper_name_tag:
+            newspaper_name = newspaper_name_tag.text
 
     # Get thumbnail link
     thumbnail_link = None
