@@ -36,7 +36,8 @@ def makeUrl(search, start_pg, end_pg):
         return urls
 
     # html에서 원하는 속성 추출하는 함수 만들기 (기사, 추출하려는 속성값)
-    
+
+
 def news_attrs_crawler(articles, attrs):
     attrs_content = []
     for i in articles:
@@ -51,10 +52,8 @@ headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/98.0.
 # html 생성해서 기사크롤링하는 함수 만들기(url): 링크를 반환
 def articles_crawler(url):
     # html 불러오기
-    original_html = requests.get(url, headers=headers)
+    original_html = requests.get(i, headers=headers)
     html = BeautifulSoup(original_html.text, "html.parser")
-    
-    
 
     url_naver = html.select(
         "div.group_news > ul.list_news > li div.news_area > div.news_info > div.info_group > a.info")
@@ -81,7 +80,6 @@ news_titles = []
 news_url = []
 news_contents = []
 news_dates = []
-
 for i in url:
     url = articles_crawler(url)
     news_url.append(url)
@@ -149,8 +147,6 @@ for i in tqdm(final_urls):
         news_date = re.sub(pattern=pattern1, repl='', string=str(news_date))
     # 날짜 가져오기
     news_dates.append(news_date)
-    
-    articles = soup.select('#main_pack > div.news.mynews.section._prs_nws > ul > li')
 
 print("검색된 기사 갯수: 총 ", (page2 + 1 - page) * 10, '개')
 print("\n[뉴스 제목]")
