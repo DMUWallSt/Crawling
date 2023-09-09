@@ -149,17 +149,10 @@ for i in tqdm(final_urls):
     news_dates.append(news_date)
     
     # Create a function to retrieve newspaper name and thumbnail link
-def get_newspaper_and_thumbnail(article_url):
+def get_thumbnail(article_url):
     # Load HTML for the article
     article_html = requests.get(article_url, headers=headers)
     article_soup = BeautifulSoup(article_html.text, "html.parser")
-
-    # Get newspaper name
-    newspaper_name = None
-    if "news.naver.com" in article_url:
-        newspaper_name_tag = article_soup.select_one(".press_logo .logo")
-        if newspaper_name_tag:
-            newspaper_name = newspaper_name_tag.text
 
     # Get thumbnail link
     thumbnail_link = None
@@ -167,16 +160,14 @@ def get_newspaper_and_thumbnail(article_url):
     if thumbnail_tag:
         thumbnail_link = thumbnail_tag["content"]
 
-    return newspaper_name, thumbnail_link
+    return thumbnail_link
 
-# Initialize lists to store newspaper names and thumbnail links
-newspaper_names = []
+# Initialize lists to store thumbnail links
 thumbnail_links = []
 
 # Crawl newspaper names and thumbnail links
 for article_url in tqdm(final_urls):
-    newspaper_name, thumbnail_link = get_newspaper_and_thumbnail(article_url)
-    newspaper_names.append(newspaper_name)
+    thumbnail_link = get_thumbnail(article_url)
     thumbnail_links.append(thumbnail_link)   
 
 print("검색된 기사 갯수: 총 ", (page2 + 1 - page) * 10, '개')
@@ -202,8 +193,7 @@ news_df = pd.DataFrame({'date': news_dates, 'title': news_titles, 'link': final_
 news_df = news_df.drop_duplicates(keep='first', ignore_index=True)
 print("중복 제거 후 행 개수: ", len(news_df))
 
-# Add newspaper name and thumbnail link to the DataFrame
-news_df['newspaper'] = newspaper_names
+# Add thumbnail link to the DataFrame
 news_df['thumbnail_link'] = thumbnail_links 
 
 # 데이터 프레임 저장
