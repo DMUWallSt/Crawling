@@ -4,7 +4,6 @@ import requests
 import re
 import datetime
 from tqdm import tqdm
-import sys
 
 # 페이지 url 형식에 맞게 바꾸어 주는 함수 만들기
 # 입력된 수를 1, 11, 21, 31 ...만들어 주는 함수
@@ -148,13 +147,13 @@ for i in tqdm(final_urls):
     # 날짜 가져오기
     news_dates.append(news_date)
     
-    # Create a function to retrieve newspaper name and thumbnail link
+# 썸네일 사진 가져오기
 def get_thumbnail(article_url):
-    # Load HTML for the article
+    # article에 대한 HTML 불러오기
     article_html = requests.get(article_url, headers=headers)
     article_soup = BeautifulSoup(article_html.text, "html.parser")
 
-    # Get thumbnail link
+    # 썸네일 링크 가져오기
     thumbnail_link = None
     thumbnail_tag = article_soup.find("meta", property="og:image")
     if thumbnail_tag:
@@ -162,10 +161,10 @@ def get_thumbnail(article_url):
 
     return thumbnail_link
 
-# Initialize lists to store thumbnail links
+# 썸네일 링크 리스트
 thumbnail_links = []
 
-# Crawl newspaper names and thumbnail links
+# 썸네일 링크 크롤링
 for article_url in tqdm(final_urls):
     thumbnail_link = get_thumbnail(article_url)
     thumbnail_links.append(thumbnail_link)   
@@ -193,7 +192,7 @@ news_df = pd.DataFrame({'date': news_dates, 'title': news_titles, 'link': final_
 news_df = news_df.drop_duplicates(keep='first', ignore_index=True)
 print("중복 제거 후 행 개수: ", len(news_df))
 
-# Add thumbnail link to the DataFrame
+# 썸네일 링크 데이터 프레임에 추가
 news_df['thumbnail_link'] = thumbnail_links 
 
 # 데이터 프레임 저장
