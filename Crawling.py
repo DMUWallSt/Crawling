@@ -4,7 +4,6 @@ import requests
 import re
 import datetime
 from tqdm import tqdm
-import sys
 
 # 페이지 url 형식에 맞게 바꾸어 주는 함수 만들기
 # 입력된 수를 1, 11, 21, 31 ...만들어 주는 함수
@@ -80,6 +79,7 @@ news_titles = []
 news_url = []
 news_contents = []
 news_dates = []
+press_names = []  # 언론사 이름을 담을 리스트 추가
 
 for i in url:
     url = articles_crawler(url)
@@ -148,36 +148,35 @@ for i in tqdm(final_urls):
     # 날짜 가져오기
     news_dates.append(news_date)
     
-    # Create a function to retrieve newspaper name and thumbnail link
-def get_newspaper_and_thumbnail(article_url):
-    # Load HTML for the article
+    # 언론사 이름 가져오기
+    source = news_html.select_one("#ct > div.media_end_head.go_trans > div.media_end_head_top > a > img.media_end_head_top_logo_img.light_type")
+    if source:
+        press_name = source.get('title', '언론사 정보 없음')  # 언론사 정보가 없는 경우 '언론사 정보 없음'을 저장
+    else:
+        press_name = '언론사 정보 없음'  # 언론사 정보가 없는 경우 '언론사 정보 없음'을 저장
+
+    press_names.append(press_name)  # 언론사 이름을 담을 리스트에 추가
+    
+# 썸네일 사진 가져오기
+def get_thumbnail(article_url):
+    # article에 대한 HTML 불러오기
     article_html = requests.get(article_url, headers=headers)
     article_soup = BeautifulSoup(article_html.text, "html.parser")
 
-    # Get newspaper name
-    newspaper_name = None
-    if "news.naver.com" in article_url:
-        newspaper_name_tag = article_soup.select_one(".press_logo .logo")
-        if newspaper_name_tag:
-            newspaper_name = newspaper_name_tag.text
-
-    # Get thumbnail link
+    # 썸네일 링크 가져오기
     thumbnail_link = None
     thumbnail_tag = article_soup.find("meta", property="og:image")
     if thumbnail_tag:
         thumbnail_link = thumbnail_tag["content"]
 
-    return newspaper_name, thumbnail_link
+    return thumbnail_link
 
-# Initialize lists to store newspaper names and thumbnail links
-newspaper_names = []
+# 썸네일 링크 리스트
 thumbnail_links = []
 
-# Crawl newspaper names and thumbnail links
 for article_url in tqdm(final_urls):
-    newspaper_name, thumbnail_link = get_newspaper_and_thumbnail(article_url)
-    newspaper_names.append(newspaper_name)
-    thumbnail_links.append(thumbnail_link)   
+    thumbnail_link = get_thumbnail(article_url)
+    thumbnail_links.append(thumbnail_link)  
 
 print("검색된 기사 갯수: 총 ", (page2 + 1 - page) * 10, '개')
 print("\n[뉴스 제목]")
@@ -186,25 +185,27 @@ print("\n[뉴스 링크]")
 print(final_urls)
 print("\n[뉴스 내용]")
 print(news_contents)
+print("\n[언론사]")
+print(press_names)  # 언론사 출력
 
 print('news_title: ', len(news_titles))
 print('news_url: ', len(final_urls))
 print('news_contents: ', len(news_contents))
 print('news_dates: ', len(news_dates))
+print('press_names: ', len(press_names))  # 언론사 이름 개수 출력
 
 ###데이터 프레임으로 만들기###
 import pandas as pd
 
 # 데이터 프레임 만들기
-news_df = pd.DataFrame({'date': news_dates, 'title': news_titles, 'link': final_urls, 'content': news_contents})
+news_df = pd.DataFrame({'date': news_dates, 'title': news_titles, 'link': final_urls, 'content': news_contents, 'press': press_names})
 
 # 중복 행 지우기
-news_df = news_df.drop_duplicates(keep='first', ignore_index=True)
-print("중복 제거 후 행 개수: ", len(news_df))
+#news_df = news_df.drop_duplicates(keep='first', ignore_index=True)
+#print("중복 제거 후 행 개수: ", len(news_df))
 
-# Add newspaper name and thumbnail link to the DataFrame
-news_df['newspaper'] = newspaper_names
-news_df['thumbnail_link'] = thumbnail_links 
+# 썸네일 링크 데이터 프레임에 추가
+news_df['thumbnail_link'] = thumbnail_links
 
 # 데이터 프레임 저장
 now = datetime.datetime.now()
