@@ -17,26 +17,22 @@ def makePgNum(num):
 
 
 # 크롤링할 url 생성하는 함수 만들기(검색어, 크롤링 시작 페이지, 크롤링 종료 페이지)
-
 def makeUrl(search, start_pg, end_pg):
     if start_pg == end_pg:
         start_page = makePgNum(start_pg)
-        url = "https://search.naver.com/search.naver?where=news&sm=tab_pge&query=" + search + "&start=" + str(
-            start_page)
+        url = "https://search.naver.com/search.naver?where=news&sm=tab_pge&query=" + search + "&sort=1&start=" + str(start_page)
         print("생성url: ", url)
         return url
     else:
         urls = []
         for i in range(start_pg, end_pg + 1):
             page = makePgNum(i)
-            url = "https://search.naver.com/search.naver?where=news&sm=tab_pge&query=" + search + "&start=" + str(page)
+            url = "https://search.naver.com/search.naver?where=news&sm=tab_pge&query=" + search + "&sort=1&start=" + str(page)
             urls.append(url)
         print("생성url: ", urls)
         return urls
 
     # html에서 원하는 속성 추출하는 함수 만들기 (기사, 추출하려는 속성값)
-
-
 def news_attrs_crawler(articles, attrs):
     attrs_content = []
     for i in articles:
@@ -64,12 +60,18 @@ def articles_crawler(url):
 
 # 검색어 입력
 search = input("검색할 키워드를 입력해주세요:")
+
 # 검색 시작할 페이지 입력
-page = int(input("\n크롤링할 시작 페이지를 입력해주세요. ex)1(숫자만입력):"))  # ex)1 =1페이지,2=2페이지...
-print("\n크롤링할 시작 페이지: ", page, "페이지")
+#page = int(input("\n크롤링할 시작 페이지를 입력해주세요. ex)1(숫자만입력):"))  # ex)1 =1페이지,2=2페이지...
+#print("\n크롤링할 시작 페이지: ", page, "페이지")
+
 # 검색 종료할 페이지 입력
-page2 = int(input("\n크롤링할 종료 페이지를 입력해주세요. ex)1(숫자만입력):"))  # ex)1 =1페이지,2=2페이지...
-print("\n크롤링할 종료 페이지: ", page2, "페이지")
+#page2 = int(input("\n크롤링할 종료 페이지를 입력해주세요. ex)1(숫자만입력):"))  # ex)1 =1페이지,2=2페이지...
+#print("\n크롤링할 종료 페이지: ", page2, "페이지")
+
+# 크롤링할 페이지 수 입력 (고정적)
+page = 1
+page2 = 4
 
 # naver url 생성
 url = makeUrl(search, page, page2)
@@ -118,6 +120,10 @@ for i in tqdm(final_urls):
     title = news_html.select_one("#ct > div.media_end_head.go_trans > div.media_end_head_title > h2")
     if title == None:
         title = news_html.select_one("#content > div.end_ct > div > h2")
+        
+    # 불필요한 부분 삭제 (맨 앞 요약 내용, 사진 부가설명 등)
+    for element in news_html.select(".media_end_summary, .img_desc, article#dic_area > div"):
+        element.extract()    
 
     # 뉴스 본문 가져오기
     content = news_html.select("article#dic_area")
@@ -126,7 +132,7 @@ for i in tqdm(final_urls):
 
     # 기사 텍스트만 가져오기
     # list합치기
-    content = ''.join(str(content))
+    content = "".join(str(content))
 
     # html태그제거 및 텍스트 다듬기
     pattern1 = '<[^>]*>'
@@ -134,6 +140,26 @@ for i in tqdm(final_urls):
     content = re.sub(pattern=pattern1, repl='', string=content)
     pattern2 = """[\n\n\n\n\n// flash 오류를 우회하기 위한 함수 추가\nfunction _flash_removeCallback() {}"""
     content = content.replace(pattern2, '')
+    
+    # 크롤링 시 이상하게 표시되는 데이터 수정 (본문)
+    content = content.replace('\n', '')
+    content = content.replace('\t', '')
+    content = content.replace('&lt;', '<')
+    content = content.replace('&gt;', '>')
+    
+    content = content.replace('     ', ' ')
+    content = content.replace('    ', ' ')
+    content = content.replace('   ', ' ')
+    content = content.replace('  ', ' ')
+    #content = content.replace('\"', '"') # -> 수정해야한다. 큰따옴표를 \"로 표시되는 현상
+    
+    # 크롤링 시 이상하게 표시되는 데이터 수정 (제목)
+    title = title.replace('\n', '')
+    title = title.replace('\t', '')
+    
+    # 맨 앞뒤 대괄호 삭제
+    if content.startswith('[') and content.endswith(']'):
+        content = content[1:-1]
 
     news_titles.append(title)
     news_contents.append(content)
@@ -151,7 +177,7 @@ for i in tqdm(final_urls):
     # 언론사 이름 가져오기
     source = news_html.select_one("#ct > div.media_end_head.go_trans > div.media_end_head_top > a > img.media_end_head_top_logo_img.light_type")
     if source:
-        press_name = source.get('title', '언론사 정보 없음')  # 언론사 정보가 없는 경우 '언론사 정보 없음'을 저장
+        press_name = source.get('title')  # 언론사 정보가 없는 경우 '언론사 정보 없음'을 저장
     else:
         press_name = '언론사 정보 없음'  # 언론사 정보가 없는 경우 '언론사 정보 없음'을 저장
 
@@ -196,17 +222,29 @@ print('press_names: ', len(press_names))  # 언론사 이름 개수 출력
 
 ###데이터 프레임으로 만들기###
 import pandas as pd
+import json
 
 # 데이터 프레임 만들기
 news_df = pd.DataFrame({'date': news_dates, 'title': news_titles, 'link': final_urls, 'content': news_contents, 'press': press_names})
 
-# 중복 행 지우기
+# 중복 행 지우기 (보류)
 #news_df = news_df.drop_duplicates(keep='first', ignore_index=True)
 #print("중복 제거 후 행 개수: ", len(news_df))
 
 # 썸네일 링크 데이터 프레임에 추가
 news_df['thumbnail_link'] = thumbnail_links
 
+# 키워드 정보 추가
+news_df['keyword'] = search
+
 # 데이터 프레임 저장
 now = datetime.datetime.now()
-news_df.to_csv('{}_{}.csv'.format(search, now.strftime('%Y%m%d_%H시%M분%S초')), encoding='utf-8-sig', index=False)
+#news_df.to_csv('{}_{}.csv'.format(search, now.strftime('%Y%m%d_%H시%M분%S초')), encoding='utf-8-sig', index=False)
+
+# ID를 포함한 데이터 생성
+data_with_id = [{'id': i + 1, 'date': date, 'title': title, 'link': link, 'content': content, 'press': press, 'thumbnail_link': thumbnail, 'keyword': search}
+                for i, (date, title, link, content, press, thumbnail) in enumerate(zip(news_dates, news_titles, final_urls, news_contents, press_names, thumbnail_links))]
+
+# JSON 파일로 저장
+with open('{}_{}.json'.format(search, now.strftime('%Y%m%d_%Hhours%Mminutes%Sseconds')), 'w', encoding='utf-8') as json_file:
+    json.dump(data_with_id, json_file, ensure_ascii=False, indent=4)
