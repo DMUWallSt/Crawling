@@ -17,7 +17,6 @@ def makePgNum(num):
 
 
 # 크롤링할 url 생성하는 함수 만들기(검색어, 크롤링 시작 페이지, 크롤링 종료 페이지)
-
 def makeUrl(search, start_pg, end_pg):
     if start_pg == end_pg:
         start_page = makePgNum(start_pg)
@@ -34,8 +33,6 @@ def makeUrl(search, start_pg, end_pg):
         return urls
 
     # html에서 원하는 속성 추출하는 함수 만들기 (기사, 추출하려는 속성값)
-
-
 def news_attrs_crawler(articles, attrs):
     attrs_content = []
     for i in articles:
@@ -63,15 +60,18 @@ def articles_crawler(url):
 
 # 검색어 입력
 search = input("검색할 키워드를 입력해주세요:")
+
 # 검색 시작할 페이지 입력
 #page = int(input("\n크롤링할 시작 페이지를 입력해주세요. ex)1(숫자만입력):"))  # ex)1 =1페이지,2=2페이지...
 #print("\n크롤링할 시작 페이지: ", page, "페이지")
+
 # 검색 종료할 페이지 입력
 #page2 = int(input("\n크롤링할 종료 페이지를 입력해주세요. ex)1(숫자만입력):"))  # ex)1 =1페이지,2=2페이지...
 #print("\n크롤링할 종료 페이지: ", page2, "페이지")
 
+# 크롤링할 페이지 수 입력 (고정적)
 page = 1
-page2 = 4
+page2 = 2
 
 # naver url 생성
 url = makeUrl(search, page, page2)
@@ -177,7 +177,7 @@ for i in tqdm(final_urls):
     # 언론사 이름 가져오기
     source = news_html.select_one("#ct > div.media_end_head.go_trans > div.media_end_head_top > a > img.media_end_head_top_logo_img.light_type")
     if source:
-        press_name = source.get('title', '언론사 정보 없음')  # 언론사 정보가 없는 경우 '언론사 정보 없음'을 저장
+        press_name = source.get('title')  # 언론사 정보가 없는 경우 '언론사 정보 없음'을 저장
     else:
         press_name = '언론사 정보 없음'  # 언론사 정보가 없는 경우 '언론사 정보 없음'을 저장
 
@@ -227,19 +227,22 @@ import json
 # 데이터 프레임 만들기
 news_df = pd.DataFrame({'date': news_dates, 'title': news_titles, 'link': final_urls, 'content': news_contents, 'press': press_names})
 
-# 중복 행 지우기
+# 중복 행 지우기 (보류)
 #news_df = news_df.drop_duplicates(keep='first', ignore_index=True)
 #print("중복 제거 후 행 개수: ", len(news_df))
 
 # 썸네일 링크 데이터 프레임에 추가
 news_df['thumbnail_link'] = thumbnail_links
 
+# 키워드 정보 추가
+news_df['keyword'] = search
+
 # 데이터 프레임 저장
 now = datetime.datetime.now()
 #news_df.to_csv('{}_{}.csv'.format(search, now.strftime('%Y%m%d_%H시%M분%S초')), encoding='utf-8-sig', index=False)
 
 # ID를 포함한 데이터 생성
-data_with_id = [{'id': i + 1, 'date': date, 'title': title, 'link': link, 'content': content, 'press': press, 'thumbnail_link': thumbnail}
+data_with_id = [{'id': i + 1, 'date': date, 'title': title, 'link': link, 'content': content, 'press': press, 'thumbnail_link': thumbnail, 'keyword': search}
                 for i, (date, title, link, content, press, thumbnail) in enumerate(zip(news_dates, news_titles, final_urls, news_contents, press_names, thumbnail_links))]
 
 # JSON 파일로 저장
