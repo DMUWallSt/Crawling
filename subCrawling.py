@@ -237,13 +237,82 @@ news_df['thumbnail_link'] = thumbnail_links
 # 키워드 정보 추가
 news_df['keyword'] = search
 
+## 뉴스 감성지수 분류 ##
+# 해당 긍정/부정 단어들 불러오기
+with open("./negative1.txt", encoding='utf-8') as neg:
+    negative1 = neg.readlines()
+
+with open("./negative2.txt", encoding='utf-8') as neg:
+    negative2 = neg.readlines()
+
+with open("./negative3.txt", encoding='utf-8') as neg:
+    negative3 = neg.readlines()
+
+with open("./positive1.txt", encoding='utf-8') as pos:
+    positive1 = pos.readlines()
+
+with open("./positive2.txt", encoding='utf-8') as pos:
+    positive2 = pos.readlines()
+
+with open("./positive3.txt", encoding='utf-8') as pos:
+    positive3 = pos.readlines()
+    
+negative1 = [neg.replace("\n", "") for neg in negative1]
+negative2 = [neg.replace("\n", "") for neg in negative2]
+negative3 = [neg.replace("\n", "") for neg in negative3]
+
+positive1 = [pos.replace("\n", "") for pos in positive1]
+positive2 = [pos.replace("\n", "") for pos in positive2]
+positive3 = [pos.replace("\n", "") for pos in positive3]
+
+from collections import Counter
+
+# 긍정(1) 부정(-1) 점수
+news_scores = []
+
+content_data = list(news_df['content'])
+
+for content in tqdm(content_data):
+    score = 0
+    for i in range(len(negative1)):
+        if negative1[i] in content:
+            score = score - content.count(negative1[i])
+            print("negative1 비교단어 수: ", content.count(negative1[i]), "  |  negative1 비교단어 : ", negative1[i])
+    for i in range(len(negative2)):
+        if negative2[i] in content:
+            score = score - content.count(negative2[i]) * 2
+            print("negative2 비교단어 수: ", content.count(negative2[i]), "  |  negative2 비교단어 : ", negative2[i])
+    for i in range(len(negative3)):
+        if negative3[i] in content:
+            score = score - content.count(negative3[i]) * 3
+            print("negative3 비교단어 수: ", content.count(negative3[i]), "  |  negative3 비교단어 : ", negative3[i])
+            
+    for i in range(len(positive1)):
+        if positive1[i] in content:
+            score = score + content.count(positive1[i])
+            print("positive1 비교단어 수: ", content.count(positive1[i]), "  |  positive1 비교단어 : ", positive1[i])
+    for i in range(len(positive2)):
+        if positive2[i] in content:
+            score = score + content.count(positive2[i]) * 2
+            print("positive2 비교단어 수: ", content.count(positive2[i]), "  |  positive2 비교단어 : ", positive2[i])
+    for i in range(len(positive3)):
+        if positive3[i] in content:
+            score = score + content.count(positive3[i]) * 3
+            print("positive3 비교단어 수: ", content.count(positive3[i]), "  |  positive3 비교단어 : ", positive3[i])
+
+    print("--------------------------------------------------------------")
+    news_scores.append(score)
+
+# 분류 감성지수 데이터 프레임에 추가
+news_df['score'] = news_scores
+
 # 데이터 프레임 저장
 now = datetime.datetime.now()
 #news_df.to_csv('{}_{}.csv'.format(search, now.strftime('%Y%m%d_%H시%M분%S초')), encoding='utf-8-sig', index=False)
 
 # ID를 포함한 데이터 생성
-data_with_id = [{'id': i + 1, 'date': date, 'title': title, 'link': link, 'content': content, 'press': press, 'thumbnail_link': thumbnail, 'keyword': search}
-                for i, (date, title, link, content, press, thumbnail) in enumerate(zip(news_dates, news_titles, final_urls, news_contents, press_names, thumbnail_links))]
+data_with_id = [{'id': i + 1, 'date': date, 'title': title, 'link': link, 'content': content, 'press': press, 'thumbnail_link': thumbnail, 'keyword': search, 'score': score}
+                for i, (date, title, link, content, press, thumbnail, score) in enumerate(zip(news_dates, news_titles, final_urls, news_contents, press_names, thumbnail_links, news_scores))]
 
 # JSON 파일로 저장
 with open('{}_{}.json'.format(search, now.strftime('%Y%m%d_%Hhours%Mminutes%Sseconds')), 'w', encoding='utf-8') as json_file:
