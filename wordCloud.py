@@ -19,7 +19,13 @@ for item in items:
     stock_info = {
         '종목명': sinfo[2].strip(),
         '현재가': sinfo[3].strip(),
-        '시가총액': sinfo[15].strip()
+        #'전일비': sinfo[6].strip(), # [ +,- 구분이 안되서 제외 ]
+        '등락률': sinfo[11].strip(),
+        '액면가': sinfo[14].strip(),
+        '시가총액': sinfo[15].strip(),
+        '상장주식수': sinfo[16].strip(),
+        '외국인비율': sinfo[17].strip(),
+        '거래량': sinfo[18].strip()
     }
     stock_list.append(stock_info)
 
