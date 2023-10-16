@@ -4,9 +4,19 @@ import requests
 import re
 import datetime
 from tqdm import tqdm
+import pandas as pd
+import json
 
 # 미리 입력할 키워드 리스트
-keywords = ["삼성전자", "LG전자", "애플"]
+keywords = []
+
+# stock_data.json 파일에서 '종목명' 데이터 읽어오기
+with open("stock_data.json", "r", encoding="utf-8") as json_file:
+    stock_data = json.load(json_file)
+    
+# '종목명' 데이터를 키워드 리스트에 추가
+keywords_from_stock_data = [item["종목명"] for item in stock_data]
+keywords.extend(keywords_from_stock_data)
 
 # 키워드별로 크롤링 수행
 for keyword in keywords:
@@ -260,9 +270,6 @@ for keyword in keywords:
     print("press_names: ", len(press_names))  # 언론사 이름 개수 출력
 
     ###데이터 프레임으로 만들기###
-    import pandas as pd
-    import json
-
     # 데이터 프레임 만들기
     news_df = pd.DataFrame(
         {
