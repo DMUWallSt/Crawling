@@ -19,7 +19,7 @@ for item in items:
     stock_info = {
         '종목명': sinfo[2].strip(),
         '현재가': sinfo[3].strip(),
-        #'전일비': sinfo[6].strip(), # [ +,- 구분이 안되서 제외 ]
+        '전일비': sinfo[6].strip(), # 등락률 보고 올랐는지 내렸는지 구분 가능
         '등락률': sinfo[11].strip(),
         '액면가': sinfo[14].strip(),
         '시가총액': sinfo[15].strip(),
