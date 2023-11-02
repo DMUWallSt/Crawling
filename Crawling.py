@@ -6,6 +6,14 @@ import datetime
 from tqdm import tqdm
 import pandas as pd
 import json
+import mysql.connector
+
+db_config = {
+    "host": "wallst-database.ckbjgxfonehb.ap-northeast-2.rds.amazonaws.com",
+    "user": "admin",
+    "password": "wallstdb99",
+    "database": "mydb",
+}
 
 # 미리 입력할 키워드 리스트
 keywords = []
@@ -13,17 +21,19 @@ keywords = []
 # stock_data.json 파일에서 '종목명' 데이터 읽어오기
 with open("stock_data.json", "r", encoding="utf-8") as json_file:
     stock_data = json.load(json_file)
-    
+
 # '종목명' 데이터를 키워드 리스트에 추가
 keywords_from_stock_data = [item["종목명"] for item in stock_data]
 keywords.extend(keywords_from_stock_data)
 
 # 키워드별로 크롤링 수행
 for keyword in keywords:
+    json_file_path = f"{keyword}.json"
     print(f"\n[{keyword} 크롤링 시작]\n")
 
     # 검색어 입력 대신 키워드 사용
     search = keyword
+
 
     # 페이지 url 형식에 맞게 바꾸어 주는 함수 만들기
     # 입력된 수를 1, 11, 21, 31 ...만들어 주는 함수
@@ -41,10 +51,10 @@ for keyword in keywords:
         if start_pg == end_pg:
             start_page = makePgNum(start_pg)
             url = (
-                "https://search.naver.com/search.naver?where=news&sm=tab_pge&query="
-                + search
-                + "&sort=1&start="
-                + str(start_page)
+                    "https://search.naver.com/search.naver?where=news&sm=tab_pge&query="
+                    + search
+                    + "&sort=1&start="
+                    + str(start_page)
             )
             print("생성url: ", url)
             return url
@@ -53,10 +63,10 @@ for keyword in keywords:
             for i in range(start_pg, end_pg + 1):
                 page = makePgNum(i)
                 url = (
-                    "https://search.naver.com/search.naver?where=news&sm=tab_pge&query="
-                    + search
-                    + "&sort=1&start="
-                    + str(page)
+                        "https://search.naver.com/search.naver?where=news&sm=tab_pge&query="
+                        + search
+                        + "&sort=1&start="
+                        + str(page)
                 )
                 urls.append(url)
             print("생성url: ", urls)
@@ -94,7 +104,7 @@ for keyword in keywords:
     #####뉴스크롤링 시작#####
 
     # 검색어 입력
-    #search = input("검색할 키워드를 입력해주세요:")
+    # search = input("검색할 키워드를 입력해주세요:")
 
     # 검색 시작할 페이지 입력
     # page = int(input("\n크롤링할 시작 페이지를 입력해주세요. ex)1(숫자만입력):"))  # ex)1 =1페이지,2=2페이지...
@@ -161,7 +171,7 @@ for keyword in keywords:
 
         # 불필요한 부분 삭제 (맨 앞 요약 내용, 사진 부가설명 등)
         for element in news_html.select(
-            ".media_end_summary, .img_desc, article#dic_area > div"
+                ".media_end_summary, .img_desc, article#dic_area > div"
         ):
             element.extract()
 
@@ -290,7 +300,7 @@ for keyword in keywords:
 
     # 키워드 정보 추가
     news_df["keyword"] = search
-    
+
     ## 뉴스 감성지수 분류 ##
     # 해당 긍정/부정 단어들 불러오기
     with open("./negative1.txt", encoding="utf-8") as neg:
@@ -422,10 +432,41 @@ for keyword in keywords:
 
     # JSON 파일로 저장
     with open(
-        "{}_{}.json".format(search, now.strftime("%Y%m%d_%Hhours%Mminutes%Sseconds")),
-        "w",
-        encoding="utf-8",
-    ) as json_file:
+            "{}.json".format(search), "w",
+            encoding="utf-8", ) as json_file:
         json.dump(data_with_id, json_file, ensure_ascii=False, indent=4)
 
     print(f"[{keyword} 크롤링 완료]\n")
+    # MySQL 연결
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+
+    # JSON 파일 열기
+    with open(json_file_path, "r", encoding="UTF8") as json_file:
+        json_data = json.load(json_file)
+
+    # JSON 데이터를 MySQL 테이블에 분배하여 삽입
+    for item in json_data:
+        id = item.get("id", None)
+        date = item.get("date", None)
+        title = item.get("title", None)
+        link = item.get("link", None)
+        content = item.get("content", None)
+        press = item.get("press", None)
+        thumbnail_link = item.get("thumbnail_link", None)
+        keyword = item.get("keyword", None)
+        score = item.get("score", None)
+
+        # # INSERT INTO 문을 사용하여 데이터 삽입
+        insert_query = "REPLACE INTO news_table (id, date, title, link, content, press, thumbnail_link, keyword, score) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(insert_query, (id, date, title, link, content, press, thumbnail_link, keyword, score))
+
+
+        connection.commit()
+    print("JSON 데이터가 MySQL에 삽입되었습니다.")
+
+    # 연결 종료
+    if connection.is_connected():
+        cursor.close()
+        connection.close()
+        print("MySQL 연결이 닫혔습니다.")
