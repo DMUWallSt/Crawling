@@ -63,8 +63,8 @@ for item in json_data:
     diff = item.get("전일비", None)
 
     # # INSERT INTO 문을 사용하여 데이터 삽입
-    insert_query = "INSERT INTO company_info (name, stock_today, market_cap, trading_vol, ratio, diff) VALUES (%s, %s, %s, %s, %s, %s)"
-    cursor.execute(insert_query, (name, stock_today, market_cap, trading_vol, ratio, diff))
+    insert_query = "INSERT INTO company_info (name, stock_today, market_cap, trading_vol, ratio, diff) VALUES (%s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE name = %s, stock_today = %s, market_cap = %s, trading_vol = %s, ratio = %s, diff = %s"
+    cursor.execute(insert_query, (name, stock_today, market_cap, trading_vol, ratio, diff, name, stock_today, market_cap, trading_vol, ratio, diff))
     
 
 
