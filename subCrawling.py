@@ -116,7 +116,7 @@ for keyword in keywords:
 
     # 크롤링할 페이지 수 입력 (고정적)
     page = 1
-    page2 = 4
+    page2 = 2
 
     # naver url 생성
     url = makeUrl(search, page, page2)
