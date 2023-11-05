@@ -56,7 +56,8 @@ with open(json_file_path, "r", encoding="UTF8") as json_file:
 alter_queries = [
     "ALTER TABLE company_info MODIFY stock_today VARCHAR(255)",
     "ALTER TABLE company_info MODIFY market_cap VARCHAR(255)",
-    "ALTER TABLE company_info MODIFY trading_vol VARCHAR(255)"
+    "ALTER TABLE company_info MODIFY trading_vol VARCHAR(255)",
+    "ALTER TABLE company_info MODIFY diff VARCHAR(255)"
 ]
 
 for query in alter_queries:
@@ -85,9 +86,11 @@ alter_queries2 = [
     "UPDATE company_info SET stock_today = REPLACE(stock_today, ',', '')",
     "UPDATE company_info SET market_cap = REPLACE(market_cap, ',', '')",
     "UPDATE company_info SET trading_vol = REPLACE(trading_vol, ',', '')",
+    "UPDATE company_info SET diff = REPLACE(diff, ',', '')",
     "ALTER TABLE company_info MODIFY stock_today INT",
     "ALTER TABLE company_info MODIFY market_cap INT",
-    "ALTER TABLE company_info MODIFY trading_vol INT"
+    "ALTER TABLE company_info MODIFY trading_vol INT",
+    "ALTER TABLE company_info MODIFY diff INT"
 ]
 
 for query in alter_queries2:
