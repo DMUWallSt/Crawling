@@ -9,7 +9,7 @@ import json
 import mysql.connector
 
 db_config = {
-    "host": "wallst-database.ckbjgxfonehb.ap-northeast-2.rds.amazonaws.com",
+    "host": "database-1.csupg5qofpr5.us-east-1.rds.amazonaws.com",
     "user": "admin",
     "password": "wallstdb99",
     "database": "mydb",

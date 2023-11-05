@@ -4,7 +4,7 @@ import json
 import mysql.connector
 
 db_config = {
-    "host": "wallst-database.ckbjgxfonehb.ap-northeast-2.rds.amazonaws.com",
+    "host": "database-1.csupg5qofpr5.us-east-1.rds.amazonaws.com",
     "user": "admin",
     "password": "wallstdb99",
     "database": "mydb",
@@ -53,7 +53,19 @@ cursor = connection.cursor()
 with open(json_file_path, "r", encoding="UTF8") as json_file:
     json_data = json.load(json_file)
 
-# JSON 데이터를 MySQL 테이블에 분배하여 삽입
+alter_queries = [
+    "ALTER TABLE company_info MODIFY stock_today VARCHAR(255)",
+    "ALTER TABLE company_info MODIFY market_cap VARCHAR(255)",
+    "ALTER TABLE company_info MODIFY trading_vol VARCHAR(255)",
+    "ALTER TABLE company_info MODIFY diff VARCHAR(255)"
+]
+
+for query in alter_queries:
+    cursor.execute(query)
+
+print("테이블 유형 변경")
+
+# JSON 데이터를 MySQL 테이블에 분배하여 삽입 또는 업데이트
 for item in json_data:
     name = item.get("종목명", None)
     stock_today = item.get("현재가", None)
@@ -62,13 +74,30 @@ for item in json_data:
     ratio = item.get("등락률", None)
     diff = item.get("전일비", None)
 
-    # # INSERT INTO 문을 사용하여 데이터 삽입
-    insert_query = "INSERT INTO company_info (name, stock_today, market_cap, trading_vol, ratio, diff) VALUES (%s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE name = %s, stock_today = %s, market_cap = %s, trading_vol = %s, ratio = %s, diff = %s"
-    cursor.execute(insert_query, (name, stock_today, market_cap, trading_vol, ratio, diff, name, stock_today, market_cap, trading_vol, ratio, diff))
-    
+    # UPDATE 문을 사용하여 데이터 업데이트
+    update_query = (
+        "UPDATE company_info "
+        "SET stock_today = %s, market_cap = %s, trading_vol = %s, ratio = %s, diff = %s "
+        "WHERE name = %s"
+    )
+    cursor.execute(update_query, (stock_today, market_cap, trading_vol, ratio, diff, name))
 
+alter_queries2 = [
+    "UPDATE company_info SET stock_today = REPLACE(stock_today, ',', '')",
+    "UPDATE company_info SET market_cap = REPLACE(market_cap, ',', '')",
+    "UPDATE company_info SET trading_vol = REPLACE(trading_vol, ',', '')",
+    "UPDATE company_info SET diff = REPLACE(diff, ',', '')",
+    "ALTER TABLE company_info MODIFY stock_today INT",
+    "ALTER TABLE company_info MODIFY market_cap INT",
+    "ALTER TABLE company_info MODIFY trading_vol INT",
+    "ALTER TABLE company_info MODIFY diff INT"
+]
 
-    connection.commit()
+for query in alter_queries2:
+    cursor.execute(query)
+    print("Query Executed")
+
+connection.commit()
 print("JSON 데이터가 MySQL에 삽입되었습니다.")
 
 # 연결 종료
