@@ -53,7 +53,7 @@ for keyword in keywords:
             url = (
                     "https://search.naver.com/search.naver?where=news&sm=tab_pge&query="
                     + search
-                    + "&sort=1&start="
+                    + "&start="
                     + str(start_page)
             )
             print("생성url: ", url)
@@ -65,7 +65,7 @@ for keyword in keywords:
                 url = (
                         "https://search.naver.com/search.naver?where=news&sm=tab_pge&query="
                         + search
-                        + "&sort=1&start="
+                        + "&start="
                         + str(page)
                 )
                 urls.append(url)
